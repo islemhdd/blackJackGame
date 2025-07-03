@@ -202,5 +202,6 @@ function endGame() {
 
   // return gameOver;
 }
+console.log("thing")
 
 
