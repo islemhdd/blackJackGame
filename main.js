@@ -70,21 +70,22 @@ function gameStart() {
 
   playerHand.push(newCard());
   updatePlayerHandE();
+  updatePlayerScore()
   playerHand.push(newCard());
+  updatePlayerScore()
   updatePlayerHandE();
 
   document.getElementById("dealerScoreE").innerText = "??";
 
-  playerHand.forEach((card) => {
-    if (card.value == "Ace") {
-      playerScore = playerScore + 11 > 21 ? playerScore + 1 : playerScore + 11;
-    } else {
-      playerScore += card.value;
-    }
-  });
-
-  dealerScore += dealerHand[0].value;
-  playerScoreE.innerText = "Your total: " + playerScore;
+  // playerHand.forEach((card) => {
+  //   if (card.value == "Ace") {
+  //     playerScore = playerScore + 11 > 21 ? playerScore + 1 : playerScore + 11;
+  //   } else {
+  //     playerScore += card.value;
+  //   }
+  // });
+  updateDealerScore()
+  // playerScoreE.innerText = "Your total: " + playerScore;
 
   console.log(playerHand);
   console.log(playerScore);
@@ -211,7 +212,7 @@ function endGame() {
 // Optional: Auto-start
 document.addEventListener("DOMContentLoaded", gameStart);
 function updateDealerScore(){
-  const card = dealerHand[playerHand.length - 1];
+  const card = dealerHand[dealerHand.length - 1];
   if (card.value == "Ace") {
    dealerScore += (dealerScore + 11 > 21) ? 1 : 11;
   } else {
