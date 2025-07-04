@@ -1,3 +1,7 @@
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
@@ -19,7 +23,8 @@ const Deck = [
 ];
 
 let playerScoreE = document.getElementById("playerscore");
-let dealerScoreE=document.getElementById("dealerscoreE")
+let dealerScoreE = document.getElementById("dealerScoreE");
+
 let playerHand = [];
 let dealerHand = [];
 let playerScore = 0;
@@ -44,8 +49,28 @@ const faceDownCardE = `
 `;
 
 function newCard() {
-  if (!gameOver)
-    return Deck[randomInt(0, Deck.length - 1)];
+  if (!gameOver) return Deck[randomInt(0, Deck.length - 1)];
+}
+
+function calculateScore(hand) {
+  let score = 0;
+  let aceCount = 0;
+
+  for (let card of hand) {
+    if (card.value === "Ace") {
+      aceCount++;
+      score += 11;
+    } else {
+      score += card.value;
+    }
+  }
+
+  while (score > 21 && aceCount > 0) {
+    score -= 10;
+    aceCount--;
+  }
+
+  return score;
 }
 
 function gameStart() {
@@ -70,22 +95,13 @@ function gameStart() {
 
   playerHand.push(newCard());
   updatePlayerHandE();
-  updatePlayerScore()
+  updatePlayerScore();
+
   playerHand.push(newCard());
-  updatePlayerScore()
   updatePlayerHandE();
+  updatePlayerScore();
 
   document.getElementById("dealerScoreE").innerText = "??";
-
-  // playerHand.forEach((card) => {
-  //   if (card.value == "Ace") {
-  //     playerScore = playerScore + 11 > 21 ? playerScore + 1 : playerScore + 11;
-  //   } else {
-  //     playerScore += card.value;
-  //   }
-  // });
-  updateDealerScore()
-  // playerScoreE.innerText = "Your total: " + playerScore;
 
   console.log(playerHand);
   console.log(playerScore);
@@ -94,73 +110,60 @@ function gameStart() {
 }
 
 function updatePlayerScore() {
-  const card = playerHand[playerHand.length - 1];
-  if (card.value == "Ace") {
-    playerScore += (playerScore + 11 > 21) ? 1 : 11;
-  } else {
-    playerScore += card.value;
-  }
+  playerScore = calculateScore(playerHand);
   playerScoreE.innerText = "Your total: " + playerScore;
 }
 
-function hit() {
-  if (!gameOver) {
-    playerHand.push(newCard());
-    updatePlayerHandE();
-    updatePlayerScore();
-
-    if (playerScore > 21) {
-      gameOver = true;
-      setTimeout(() => {
-        win = false;
-        endGame();
-      }, 1000);
-    }
-
-    console.log(playerHand);
-    console.log(playerScore);
-    return;
-  }
-  console.log("game already over ");
+function updateDealerScore() {
+  dealerScore = calculateScore(dealerHand);
+  dealerScoreE.innerText = dealerScore;
 }
 
-function dealerHit() {
-  if (dealerScore <= 16) {
+function hit() {
+  if (gameOver) return;
+
+  playerHand.push(newCard());
+  updatePlayerHandE();
+  updatePlayerScore();
+
+  if (playerScore > 21) {
+    gameOver = true;
     setTimeout(() => {
-      const card = newCard();
-      dealerHand.push(card);
-      updateDealerHandE();
-
-      if (card.value == "Ace")
-        dealerScore += dealerScore + 11 > 21 ? 1 : 11;
-      else
-        dealerScore += card.value;
-
-      document.getElementById("dealerScoreE").innerText = dealerScore;
-
-      if (dealerScore > 21) {
-        win = true;
-        endGame();
-        return;
-      }
-
-      dealerHit(); // recurse
+      win = false;
+      endGame();
     }, 1000);
   }
 }
 
-function stand() {
-  if (gameOver) return;
-  DealerFlipCard();
-  document.getElementById("dealerScoreE").innerText = dealerScore;
-  dealerHit();
+async function dealerHit() {
+  while (calculateScore(dealerHand) <= 16) {
+    const card = newCard();
+    dealerHand.push(card);
+    updateDealerHandE();
+    updateDealerScore();
 
-  setTimeout(() => {
-    if (!gameOver) {
-      win = playerScore > dealerScore;
+    if (dealerScore > 21) {
+      win = true;
       endGame();
+      return;
     }
-  }, 1500);
+
+    await delay(1000);
+  }
+}
+
+async function stand() {
+  if (gameOver) return;
+
+  DealerFlipCard();
+  updateDealerScore();
+  await dealerHit();
+  await delay(1500);
+
+  if (!gameOver) {
+    win = playerScore > dealerScore;
+    endGame();
+  }
 }
 
 function makeCardE(card) {
@@ -173,19 +176,17 @@ function makeCardE(card) {
 }
 
 function updatePlayerHandE() {
-  let playerHandE = document.getElementById("player-hand");
-  playerHandE.innerHTML += makeCardE(playerHand.at(-1));
+  document.getElementById("player-hand").innerHTML += makeCardE(playerHand.at(-1));
 }
 
 function updateDealerHandE() {
-  let dealerHandE = document.getElementById("dealer-hand");
-  dealerHandE.innerHTML += makeCardE(dealerHand.at(-1));
+  document.getElementById("dealer-hand").innerHTML += makeCardE(dealerHand.at(-1));
 }
 
 function DealerFlipCard() {
   const flipped = document.getElementById("fliped");
-  if (flipped) flipped.remove(); // remove the face-down card
-  updateDealerHandE(); // show real card
+  if (flipped) flipped.remove();
+  updateDealerHandE();
 }
 
 function endGame() {
@@ -200,7 +201,7 @@ function endGame() {
     return;
   }
 
-  if (playerScore == dealerScore) {
+  if (playerScore === dealerScore) {
     endgameE.innerText += " tie";
     endgameE.style.backgroundColor = "yellow";
   } else {
@@ -209,15 +210,4 @@ function endGame() {
   }
 }
 
-// Optional: Auto-start
 document.addEventListener("DOMContentLoaded", gameStart);
-function updateDealerScore(){
-  const card = dealerHand[dealerHand.length - 1];
-  if (card.value == "Ace") {
-   dealerScore += (dealerScore + 11 > 21) ? 1 : 11;
-  } else {
-    dealerScore += card.value;
-  }
-  dealerScoreE.innerText = "Your total: " + dealerScore;
-
-}
